@@ -29,8 +29,7 @@ const mostLikes = (blogs) => {
         likes: lodash.sumBy(objs, 'likes')
     })).value();
     const topBlogger = obj.reduce((a, b) => a.likes > b.likes ? a : b )
-    
-    console.log(topBlogger)
+
     return topBlogger
 }
 
