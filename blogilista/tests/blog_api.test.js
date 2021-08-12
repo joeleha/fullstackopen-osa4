@@ -4,15 +4,29 @@ const app = require("../app");
 const api = supertest(app);
 const Blog = require("../models/blog");
 const helper = require("./test_helper");
+let token = null;
+
+beforeAll(async () => {
+    await api
+        .post("/api/users")
+        .send({
+            username: "test",
+            name: "Tester",
+            password: "12345678",
+        })
+    
+    const res = await api.post("/api/login")
+        .send({
+            username: "test",
+            password: "12345678",
+        })
+    
+    token = res.body.token
+});
 
 beforeEach(async () => {
   await Blog.deleteMany({});
-
-  let blogObject = new Blog(helper.initialBlogs[0]);
-  await blogObject.save();
-
-  blogObject = new Blog(helper.initialBlogs[1]);
-  await blogObject.save();
+  await Blog.insertMany(helper.initialBlogs)
 });
 
 test("blogs are returned as json", async () => {
@@ -54,6 +68,7 @@ test("a valid blog can be added", async () => {
 
   await api
     .post("/api/blogs")
+    .set('Authorization', `bearer ${token}`)
     .send(newBlog)
     .expect(200)
     .expect("Content-Type", /application\/json/);
@@ -75,6 +90,7 @@ test("blog without title is not added", async () => {
 
   await api
     .post("/api/blogs")
+    .set('Authorization', `bearer ${token}`)
     .send(newBlog)
     .expect(400);
 
@@ -90,7 +106,10 @@ test("blog without likes defaults to 0", async () => {
     url: "http://www.diipadaapa.com",
   };
 
-  const response = await api.post("/api/blogs").send(newBlog);
+  const response = await api
+    .post("/api/blogs")
+    .set('Authorization', `bearer ${token}`)
+    .send(newBlog);
 
   expect(response.body.likes).toEqual(0);
 });
